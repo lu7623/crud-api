@@ -19,6 +19,15 @@ export enum Methods {
   DELETE = 'DELETE',
 }
 
+export enum StatusCodes {
+  NotFound = 404,
+  Created = 201,
+  Ok = 200,
+  ServerError = 500,
+  Deleted = 204,
+  BadRequest = 400,
+}
+
 export enum Endpoints {
   users = '/api/users',
   user = '/api/users/',
