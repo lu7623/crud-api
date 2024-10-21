@@ -1,4 +1,4 @@
-import { UserInfo } from 'src/server/types';
+import { UserInfo } from '../server/types';
 
 export function isUserInfo(body: object): body is UserInfo {
   return (

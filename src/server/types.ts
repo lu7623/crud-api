@@ -12,6 +12,10 @@ export interface UserResponse {
   data: User[] | User;
 }
 
+export interface ErrorResponse {
+  error: string
+}
+
 export enum Methods {
   GET = 'GET',
   POST = 'POST',

@@ -3,9 +3,10 @@ import { Endpoints, Methods, StatusCodes, User, UserInfo } from './types';
 import { messages } from './messages';
 import { urlParse } from '../utils/urlParse';
 import { usersDatabase } from './userDatabase';
-import { isUserInfo } from 'src/utils/typeGuard';
+import { isUserInfo } from '../utils/typeGuard';
 import { v4 as uuidv4 } from 'uuid';
 import { validate as uuidValidate } from 'uuid';
+import { makeResponse } from './makeResponse';
 
 export const handler = (req: IncomingMessage, res: ServerResponse) => {
   const reqData = urlParse(req);
@@ -15,73 +16,89 @@ export const handler = (req: IncomingMessage, res: ServerResponse) => {
       if (url.startsWith(Endpoints.user)) {
         if (method === Methods.GET && id) {
           if (!uuidValidate(id)) {
-            res.statusCode = StatusCodes.BadRequest;
-            res.end(JSON.stringify(messages.invalidId));
+            makeResponse({
+              res: res,
+              code: StatusCodes.BadRequest,
+              error: { error: messages.invalidId },
+            });
           } else {
             let user = usersDatabase.find((x) => x.id === id);
             if (user) {
-              res.statusCode = StatusCodes.Ok;
-              res.write(JSON.stringify({ data: user }));
-              res.end();
+              makeResponse({ res: res, code: StatusCodes.Ok, data: { data: user } });
             } else {
-              res.statusCode = StatusCodes.NotFound;
-              res.end(JSON.stringify(messages.notFoundUser));
+              makeResponse({
+                res: res,
+                code: StatusCodes.NotFound,
+                error: { error: messages.notFoundUser },
+              });
             }
           }
         } else if (method === Methods.PUT && id) {
           if (!uuidValidate(id)) {
-            res.statusCode = StatusCodes.BadRequest;
-            res.end(JSON.stringify(messages.invalidId));
+            makeResponse({
+              res: res,
+              code: StatusCodes.BadRequest,
+              error: { error: messages.invalidId },
+            });
           } else {
             let userIndex = usersDatabase.findIndex((x) => x.id === id);
-            if (userIndex) {
+            if (userIndex!==-1) {
               let bodyData = '';
               req.on('data', function (data) {
                 bodyData += data;
               });
-
               req.on('end', function () {
                 const body = JSON.parse(bodyData);
                 if (isUserInfo(body)) {
                   let updateUser: User = Object.assign(body, { id: id });
                   usersDatabase[userIndex] = updateUser;
-                  res.statusCode = StatusCodes.Ok;
-                  res.write(JSON.stringify({ data: updateUser }));
-                  res.end(JSON.stringify(messages.successUpdate));
+                  makeResponse({ res: res, code: StatusCodes.Ok, data: { data: updateUser } });
                 } else {
-                  res.statusCode = StatusCodes.BadRequest;
-                  res.end(JSON.stringify(messages.invalidFields));
+                  makeResponse({
+                    res: res,
+                    code: StatusCodes.BadRequest,
+                    error: { error: messages.invalidFields },
+                  });
                 }
               });
             } else {
-              res.statusCode = StatusCodes.NotFound;
-              res.end(JSON.stringify(messages.notFoundUser));
+              makeResponse({
+                res: res,
+                code: StatusCodes.NotFound,
+                error: { error: messages.notFoundUser },
+              });
             }
           }
         } else if (method === Methods.DELETE && id) {
           if (!uuidValidate(id)) {
-            res.statusCode = StatusCodes.BadRequest;
-            res.end(JSON.stringify(messages.invalidId));
+            makeResponse({
+              res: res,
+              code: StatusCodes.BadRequest,
+              error: { error: messages.invalidId },
+            });
           } else {
             let userIndex = usersDatabase.findIndex((x) => x.id === id);
-            if (userIndex) {
+            if (userIndex!==-1) {
               usersDatabase.splice(userIndex, 1);
-              res.statusCode = StatusCodes.Deleted;
-              res.end(JSON.stringify(messages.successDelete));
+              makeResponse({ res: res, code: StatusCodes.Deleted });
             } else {
-              res.statusCode = StatusCodes.NotFound;
-              res.end(JSON.stringify(messages.notFoundUser));
+              makeResponse({
+                res: res,
+                code: StatusCodes.NotFound,
+                error: { error: messages.notFoundUser },
+              });
             }
           }
         } else {
-          res.statusCode = StatusCodes.BadRequest;
-          res.end(JSON.stringify(messages.wrongMethod));
+          makeResponse({
+            res: res,
+            code: StatusCodes.BadRequest,
+            error: { error: messages.wrongMethod },
+          });
         }
       } else if (url === Endpoints.users) {
         if (method === Methods.GET) {
-          res.statusCode = StatusCodes.Ok;
-          res.write(JSON.stringify({ data: usersDatabase }));
-          res.end();
+          makeResponse({ res: res, code: StatusCodes.Ok, data: { data: usersDatabase } });
         } else if (method === Methods.POST) {
           let bodyData = '';
           req.on('data', function (data) {
@@ -93,25 +110,35 @@ export const handler = (req: IncomingMessage, res: ServerResponse) => {
             if (isUserInfo(body)) {
               let newUser: User = Object.assign(body, { id: uuidv4() });
               usersDatabase.push(newUser);
-              res.statusCode = StatusCodes.Created;
-              res.write(JSON.stringify({ data: newUser }));
-              res.end(JSON.stringify(messages.successCreate));
+              makeResponse({ res: res, code: StatusCodes.Created, data: { data: newUser } });
             } else {
-              res.statusCode = StatusCodes.BadRequest;
-              res.end(JSON.stringify(messages.invalidFields));
+              makeResponse({
+                res: res,
+                code: StatusCodes.BadRequest,
+                error: { error: messages.invalidFields },
+              });
             }
           });
         } else {
-          res.statusCode = StatusCodes.BadRequest;
-          res.end(JSON.stringify(messages.wrongMethod));
+          makeResponse({
+            res: res,
+            code: StatusCodes.BadRequest,
+            error: { error: messages.wrongMethod },
+          });
         }
       }
     } else {
-      res.statusCode = StatusCodes.NotFound;
-      res.end(JSON.stringify(messages.notFoundEndpoint));
+      makeResponse({
+        res: res,
+        code: StatusCodes.NotFound,
+        error: { error: messages.notFoundEndpoint },
+      });
     }
   } catch {
-    res.statusCode = StatusCodes.ServerError;
-    res.end(JSON.stringify(messages.serverError));
+    makeResponse({
+      res: res,
+      code: StatusCodes.ServerError,
+      error: { error: messages.serverError },
+    });
   }
 };
