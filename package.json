@@ -5,11 +5,12 @@
   "main": "index.ts",
   "scripts": {
     "start:dev": "tsnd src/index.ts --watch ./src",
-    "start:prod": "npm run build && cross-env NODE_ENV=production node ./dist/bundle.js",
+    "start:prod": "npm run build && node ./dist/bundle.js",
     "watch": "tsnd src/index.ts --watch ./src",
     "lint": "eslint --fix ",
     "format:fix": "prettier --write --ignore-path .gitignore .",
-    "test": "jest"
+    "test": "jest",
+    "build": "webpack"
   },
   "author": "Lu Agulova",
   "license": "ISC",
